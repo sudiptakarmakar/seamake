@@ -17,6 +17,7 @@ APP_CMAKELIST = f"{APP_DIR}/{CMAKE_LISTS}"
 LIBS_CMAKELIST = f"{LIBS_DIR}/{CMAKE_LISTS}"
 EXT_LIBS_CMAKELIST = f"{EXT_LIBS_DIR}/{CMAKE_LISTS}"
 LIB_SUFFIX = "module"
+BUILD_DIR = "cmake-build"
 
 
 def execute(cmds, silent=False):
@@ -176,11 +177,6 @@ def copy_googletest_ext_lib(lib_path=EXT_LIBS_DIR, version="1.11.0"):
     rm_cmd = f"rm {dl_zip}"
     mv_cmd = f"mv {target_dir}-* {target_dir}"
     os.system(f"{uz_cmd} && {rm_cmd} && {mv_cmd}")
-
-
-def dummy_copy_googletest_ext_lib(lib_path=EXT_LIBS_DIR, version="1.11.0"):
-    cmd = f"cp -r googletest {lib_path}"
-    os.system(cmd)
 
 
 def create_ext_lib_modules(proj, ext_libs, ext_lib_path=EXT_LIBS_DIR):
@@ -346,47 +342,10 @@ def create_program_files(proj, libs):
     create_cpp_main(proj, libs)
 
 
-def print_result(proj, libs, show=False):
-    lib_tests = "".join(f"./{LIBS_DIR}/{l}/{l}.tests\n" for l in libs)
-    template = f"""SUCCESS!
-
-Now create a build directory in {ROOT_DIR}, name it 'build'.
-Enter 'build' directory.
-
-cd build
-
-Once in build directory, run,
-
-cmake .. -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" && make all
-
-This will try to create build environment and then build.
-If this stage succeeds, you should be able to run default demo executable:
-
-./{APP_DIR}/{proj}.*.tsk
-
-You should be able to run all tests by running
-
-ctest
-
-If you want to run individual library tests, you can run:
-
-{lib_tests}
-
-Thank you
-"""
-    if show:
-        print(template)
-
-
-def start():
-    proj = "task"
-    libs = ["liba", "libb", "libc"]
-    ext_libs = ["googletest"]
-    public_libs = []
+def start(proj, libs, dep_libs, ext_libs=("googletest",)):
     create_cmakelist_structure(proj=proj, libs=libs, ext_libs=ext_libs)
-    fill_in_cmakelists(proj, libs, public_libs, ext_libs)
+    fill_in_cmakelists(proj, libs, dep_libs, ext_libs)
     create_program_files(proj, libs)
-    print_result(proj, libs)
 
 
 def cmake_build(src, bld, bld_t, gen_t, dev_warn, mk_opt):
@@ -419,10 +378,12 @@ def cli():
     multiple=True,
     help="Library that will be developed in this project",
 )
-@click.option("-d", "--dep", "deps", multiple=True, help=)
-@click.option("-v", "--verbose", count=True)
+@click.option(
+    "-d", "--dep", "deps", multiple=True, help="Library dependency, system level"
+)
+@click.option("-v", "--verbose", count=True, help="Verbosity level of output [no-op]")
 def init(project, libs, deps, verbose):
-    print(locals())
+    start(project, libs, deps)
 
 
 @cli.command()
@@ -438,7 +399,7 @@ def init(project, libs, deps, verbose):
     "-b",
     "--build-root",
     type=click.Path(file_okay=False, dir_okay=True),
-    default="cmake-build",
+    default=BUILD_DIR,
     help="CMake build root directory",
     show_default=True,
 )
@@ -478,7 +439,6 @@ def init(project, libs, deps, verbose):
 def build(
     source_root, build_root, build_type, generator_type, dev_warning, make_option
 ):
-    print(locals())
     cmake_build(
         source_root, build_root, build_type, generator_type, dev_warning, make_option
     )
@@ -489,11 +449,11 @@ def build(
     "-b",
     "--build-root",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    default="cmake-build",
+    default=BUILD_DIR,
     help="CMake build directory with build artifacts",
     show_default=True,
 )
-def targets(build_root):
+def target(build_root):
     cmake_list_targets(build_root)
 
 

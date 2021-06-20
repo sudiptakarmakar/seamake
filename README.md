@@ -57,6 +57,8 @@ Options:
                                   [default: all]
   --help                          Show this message and exit.
 
+Example:
+  seamaker.py build -s "." -b "cmake-build" -t "Debug" -g "Unix Makefiles" -w -m "test"
 ```
 ## `target`: List `make` Targets
 
@@ -69,6 +71,9 @@ Options:
   -b, --build-root DIRECTORY  CMake build directory with build artifacts
                               [default: cmake-build]
   --help                      Show this message and exit.
+
+Example:
+  seamaker.py target -b "cmake-build"
 ```
 
 ## Enhancements
